@@ -80,7 +80,11 @@ int calculateDistanceRight()
   return duration*0.017;
 }
 
-void setup() 
+TimedAction frontDistanceThread = TimedAction(200,calculateDistance);
+TimedAction leftDistanceThread = TimedAction(200,calculateDistanceLeft);
+TimedAction rightDistanceThread = TimedAction(200,calculateDistanceRight);
+
+void setup()
 {
     Serial.begin(9600);
     pinMode(E1, OUTPUT);
@@ -100,14 +104,12 @@ void setup()
     pinMode(trigPinRight, OUTPUT);
     pinMode(echoPinRight, INPUT);
 }
-TimedAction frontDistanceThread = TimedAction(200,calculateDistance);
-TimedAction leftDistanceThread = TimedAction(200,calculateDistanceLeft);
-TimedAction rightDistanceThread = TimedAction(200,calculateDistanceRight);
+
 void loop() {
 delay(10);
-distance = frontDistanceThread.check();
-distanceLeft = leftDistanceThread.check();
-distanceRight = rightDistanceThread.check();
+int distance = frontDistanceThread.check();
+int distanceLeft = leftDistanceThread.check();
+int distanceRight = rightDistanceThread.check();
 
   handleBluetooth();
   lookAround();
