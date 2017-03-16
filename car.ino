@@ -1,15 +1,15 @@
-//#include <LiquidCrystal.h>
-//LiquidCrystal lcd(2, 3, 4, 5, 6, 7); // Creates an LCD object. Parameters: (rs, enable, d4, d5, d6, d7)
+#include <TimedAction.h>
+#include <Utility.h>
 
 #include "Servo.h"
 #include "Func.h"
 
 #define echoPin 8  // for ultrasonic senzor
-#define echoPinLeft 4  // for ultrasonic senzor
-#define trigPinLeft 5 // for ultrasonic senzor
-#define echoPinRight 7  // for ultrasonic senzor
-#define trigPinRight 6 // for ultrasonic senzor
 #define trigPin 11 // for ultrasonic senzor
+#define echoPinLeft 7  // for ultrasonic senzor
+#define trigPinLeft 6 // for ultrasonic senzor
+#define echoPinRight 4  // for ultrasonic senzor
+#define trigPinRight 5 // for ultrasonic senzor
 #define horizontal 9  // horizontal servo
 #define vertical 10   // vertical servo
 #define E2 12   // Enable Pin for motor 2
@@ -49,10 +49,39 @@ unsigned long time;
 bool enable = false;
 
 int corect = 0;
+int calculateDistance()
+{
+  digitalWrite(11, LOW);
+  delayMicroseconds(2);
+  digitalWrite(11, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(11, LOW);
+  duration = pulseIn(8, HIGH);
+  return duration*0.017;
+}
+int calculateDistanceLeft()
+{
+  digitalWrite(6, LOW);
+  delayMicroseconds(2);
+  digitalWrite(6, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(6, LOW);
+  duration = pulseIn(7, HIGH);
+  return duration*0.017;
+}
+int calculateDistanceRight()
+{
+  digitalWrite(5, LOW);
+  delayMicroseconds(2);
+  digitalWrite(5, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(5, LOW);
+  duration = pulseIn(4, HIGH);
+  return duration*0.017;
+}
 
 void setup() 
 {
-  //lcd.begin(16,2); // Initializes the interface to the LCD screen, and specifies the dimensions (width and height) of the display
     Serial.begin(9600);
     pinMode(E1, OUTPUT);
     pinMode(E2, OUTPUT);
@@ -66,36 +95,43 @@ void setup()
     
     pinMode(trigPin, OUTPUT);
     pinMode(echoPin, INPUT);
+    pinMode(trigPinLeft, OUTPUT);
+    pinMode(echoPinLeft, INPUT);
+    pinMode(trigPinRight, OUTPUT);
+    pinMode(echoPinRight, INPUT);
 }
+TimedAction frontDistanceThread = TimedAction(200,calculateDistance);
+TimedAction leftDistanceThread = TimedAction(200,calculateDistanceLeft);
+TimedAction rightDistanceThread = TimedAction(200,calculateDistanceRight);
 void loop() {
-#ifdef DEBUG
-  cNEW=0;
-  if (Serial.available() > 0)
-  {
-      cNEW = Serial.read();
-        switch(cNEW)
-        {
-          case 'W' : {moveForward(); time = millis(); break;}
-          case 'S' : {moveBack(); break;}
-          case '1' : {speedUP(); break;}
-          case '2' : {speedDOWN(); break;}
-          case '3' : {corectLeft(); break;}
-          case '4' : {corectRight(); break;}
-          case '5' : {followVall = true; break;}
-          case '6' : {enable = false; break;}
-          case 'A' : {turnLeft(); break;}
-          case 'D' : {turnRight(); break;}
-          case 'Q' : {stopMove(); break;}
-          case 'N' : {turnLeftParam(0); break;}
-          case 'M' : {turnRightParam(0); break;}
-        }
-  }
+delay(10);
+distance = frontDistanceThread.check();
+distanceLeft = leftDistanceThread.check();
+distanceRight = rightDistanceThread.check();
+
+  handleBluetooth();
+  lookAround();
+  hanleColision();
+  fallowWallFunc();
+  printDistances();
+}
+void printDistances()
+{
+  if(distance != 0)
+  Serial.println("Front" + distance);
+  if(distanceLeft != 0)
+  Serial.println("Left" + distanceLeft);
+  if(distanceRight != 0)
+  Serial.println("Right" + distanceRight);
+}
+void lookAround()
+{
   if(!followVall && enable)
   {
     if(hor) //horizontal lookAround for servo
     {
         horizontalS.write(horPos -= 3);
-        if(horPos < 70)
+        if(horPos < 75)
         {
           hor = false;
           // raz za cyklus zmeraj teplotu
@@ -107,7 +143,7 @@ void loop() {
     else
     {
       horizontalS.write(horPos += 3);
-      if(horPos > 120)
+      if(horPos > 115)
       {
         hor = true;
       }
@@ -128,46 +164,41 @@ void loop() {
         ver = true;
       }
     }  
-  }
-  // meranie vzdialenosti ultrazvukovym senyoom
-  //digitalWrite(trigPin, LOW);
-  //digitalWrite(trigPinLeft, LOW);
-  digitalWrite(trigPinRight, LOW);
-  delayMicroseconds(2);
-  //digitalWrite(trigPin, HIGH);
-  //digitalWrite(trigPinLeft, HIGH);
-  digitalWrite(trigPinRight, HIGH);
-  delayMicroseconds(10);
-  //digitalWrite(trigPin, LOW);
-  //digitalWrite(trigPinLeft, LOW);
-  digitalWrite(trigPinRight, LOW);
-  //duration = pulseIn(echoPin, HIGH);
-  //durationLeft = pulseIn(echoPinLeft, HIGH);
-  durationRight = pulseIn(echoPinRight, HIGH);
-  distance = duration*0.017;
-  distanceLeft = durationLeft * 0.017;
-  distanceRight = durationRight * 0.017;
-  Serial.print("Distance: ");
-  Serial.println(distance);
-  Serial.print("DistanceLeft: ");
-  Serial.println(distanceLeft);
-  Serial.print("DistanceRight: ");
-  Serial.println(distanceRight);
-
+  }  
+}
+void hanleColision()
+{
   if(distance < HITDISTANCE && movingForward == true && !followVall)
   {
     stopMove();
   }
-  /*
-  lcd.setCursor(0,0); // Sets the location at which subsequent text written to the LCD will be displayed
-  lcd.print("Distance: "); // Prints string "Distance" on the LCD
-  lcd.print(distance); // Prints the distance value from the sensor
-  lcd.print(" cm      ");
-  
-  lcd.setCursor(0,1);
-  lcd.print("Teplota: "); // Prints string "Distance" on the LCD
-  //lcd.print(temperature);
-*/
+}
+void handleBluetooth()
+{
+  cNEW=0;
+  if (Serial.available() > 0)
+  {
+      cNEW = Serial.read();
+        switch(cNEW)
+        {
+          case 'W' : {moveForward(); time = millis(); break;}
+          case 'S' : {moveBack(); break;}
+          case '1' : {speedUP(); break;}
+          case '2' : {speedDOWN(); break;}
+          case '3' : {corectLeft(); break;}
+          case '4' : {corectRight(); break;}
+          case '5' : {followVall = true; break;}
+          case '6' : {enable = false; break;}
+          case 'A' : {turnLeft(); break;}
+          case 'D' : {turnRight(); break;}
+          case 'Q' : {stopMove(); break;}
+          case 'N' : {turnLeftParam(0); break;}
+          case 'M' : {turnRightParam(0); break;}
+        }
+  }  
+}
+void fallowWallFunc()
+{
   if(movingForward && followVall)
   {
     horizontalS.write(180);
@@ -206,23 +237,23 @@ void loop() {
     {
     
     }
-
+    //ak nevidi stenu 2,5 sekundy pozrie sa vpred
     if(millis() - time > 2500)
     {
         followVall = false;
     }
-    //lcd.print(corectRightVal);
-    //lcd.print("         ");
     Serial.println(corectRightVal);
 
+    // spomalenie 
     analogWrite(E1, 0);
     analogWrite(E2, 0);
     delay(30);
     analogWrite(E1, moveSpeed);
     analogWrite(E2, moveSpeed);
-  }
-#endif
+  }  
 }
+
+
 //delay 350ms = 90 stupnov
 // 200 - 45
 // 100 - 15
