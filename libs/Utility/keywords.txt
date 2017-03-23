@@ -1,3 +1,0 @@
-Utility	KEYWORD1
-foreach	KEYWORD2
-sign	KEYWORD2
