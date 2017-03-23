@@ -21,8 +21,7 @@
 #define I2 A4   // Control pin 2 for motor 1
 #define I1 A5   // Control pin 1 for motor 1
 
-#define HITDISTANCE 30
-#define DEBUG
+#define HITDISTANCE 50 // stop [cm]
 
 Servo horizontalS, verticalS;
 
@@ -35,21 +34,20 @@ int moveSpeed = 190;
 int distance;
 int distanceLeft;
 int distanceRight;
-int senzorVal;
-float voltage;
 float temperature;
 long duration;
 long durationLeft;
 long durationRight;
 char cNEW;
-int corectRightVal = 40;
+int corectRightVal = 30;
 int corectLeftVal = 0;
 bool followVall = false;
 unsigned long time;
-bool enable = false;
+bool enableLookAround = false;
 
 int corect = 0;
-int calculateDistance()
+// fuctions for threads for distance calculation
+int getDist()
 {
     digitalWrite(11, LOW);
     delayMicroseconds(2);
@@ -59,7 +57,7 @@ int calculateDistance()
     duration = pulseIn(8, HIGH);
     return duration * 0.017;
 }
-int calculateDistanceLeft()
+int getDistLeft()
 {
     digitalWrite(6, LOW);
     delayMicroseconds(2);
@@ -69,7 +67,7 @@ int calculateDistanceLeft()
     duration = pulseIn(7, HIGH);
     return duration * 0.017;
 }
-int calculateDistanceRight()
+int getDistRight()
 {
     digitalWrite(5, LOW);
     delayMicroseconds(2);
@@ -79,25 +77,31 @@ int calculateDistanceRight()
     duration = pulseIn(4, HIGH);
     return duration * 0.017;
 }
-
-TimedAction frontDistanceThread = TimedAction(50, calculateDistance);
-TimedAction leftDistanceThread = TimedAction(200, calculateDistanceLeft);
-TimedAction rightDistanceThread = TimedAction(200, calculateDistanceRight);
+// create multi-threaded triggers with constrained execution frequency
+TimedAction frontDistanceThread = TimedAction(50, getDist);
+TimedAction leftDistanceThread = TimedAction(200, getDistLeft);
+TimedAction rightDistanceThread = TimedAction(200, getDistRight);
 
 void setup()
 {
-    Serial.begin(9600);
+    Serial.begin(9600); // init serial port
+    // set modes to pins for speed of left & right motors
     pinMode(E1, OUTPUT);
     pinMode(E2, OUTPUT);
+    // attach front sonar servos
     horizontalS.attach(horizontal);
     verticalS.attach(vertical);
-    verticalS.write(100);
-
+    // init front sonar to look straight ahead
+    horizontalS.write(90); // middle of range
+    verticalS.write(100); // middle of range
+    
+    // set modes to pins for direction of all 4 motors 
     pinMode(I1, OUTPUT);
     pinMode(I2, OUTPUT);
     pinMode(I3, OUTPUT);
     pinMode(I4, OUTPUT);
 
+    // sonar: trigger sends, echo receives
     pinMode(trigPin, OUTPUT);
     pinMode(echoPin, INPUT);
     pinMode(trigPinLeft, OUTPUT);
@@ -108,36 +112,33 @@ void setup()
 
 void loop()
 {
-    int aktDistance = 0;
-    delay(10);
-    aktDistance = frontDistanceThread.check();
+    int aktDistance = frontDistanceThread.check();
     if(aktDistance != 0)
-    {
-      distance = aktDistance;  
-    }
-    
-    distanceLeft = leftDistanceThread.check();
-    distanceRight = rightDistanceThread.check();
+      distance = aktDistance;
+    //distanceLeft = leftDistanceThread.check();
+    //distanceRight = rightDistanceThread.check();
 
-    handleBluetooth();
-    lookAround();
-    hanleColision();
+    handleBluetooth(); // process bluetooth input signal
+    if (enableLookAround)
+      lookAround();
 
-    //corect Right
-    analogWrite(E2, 0);
-    delay(corectRightVal);
-    analogWrite(E2, moveSpeed);
-    Serial.println(corectRightVal);
+    handleCollision();
+
+    // steering correction - right
+    analogWrite(E2, 0); // turn off right motor
+    delay(corectRightVal); // wait N [ms]
+    analogWrite(E2, moveSpeed); // turn on right motor
     
     if(movingForward)
     {
-      // spomalenie 
+      // forward drive slowdown
         analogWrite(E1, 0);
         analogWrite(E2, 0);
-        delay(30);
+        delay(30); // factor of slowdown [ms]
         analogWrite(E1, moveSpeed);
         analogWrite(E2, moveSpeed);
     }
+    // TODO - turn on/off by bool switch
     //fallowWallFunc();
     //printDistances();
 }
@@ -150,50 +151,53 @@ void printDistances()
     if (distanceRight != 0)
         Serial.println("Right" + distanceRight);
 }
+
+float measureTemperature(){
+  int senzorVal = analogRead(tempPort); // read data from silicon sensor
+  float voltage = (senzorVal / 1024.0) * 5.0; // calculate voltage according to catalogue
+  
+  return (voltage - 0.5) * 100; // calculate temperature in [°C]
+}
+
 void lookAround()
 {
-    if (!followVall && enable)
-    {
-        if (hor) //horizontal lookAround for servo
-        {
-            horizontalS.write(horPos -= 2);
-            if (horPos < 75)
-            {
-                hor = false;
-                // raz za cyklus zmeraj teplotu
-                senzorVal = analogRead(tempPort);
-                voltage = (senzorVal / 1024.0) * 5.0;
-                temperature = (voltage - 0.5) * 100;
-            }
-        }
-        else
-        {
-            horizontalS.write(horPos += 2);
-            if (horPos > 115)
-            {
-                hor = true;
-            }
-        }
-        /*
-        if (ver) // vertical lookAround for servo
-        {
-            verticalS.write(verPos -= 2);
-            if (verPos < 80)
-            {
-                ver = false;
-            }
-        }
-        else
-        {
-            verticalS.write(verPos += 2);
-            if (verPos > 110)
-            {
-                ver = true;
-            }
-        }*/
-    }
+  if (hor) //horizontal lookAround for servo
+  {
+      horizontalS.write(horPos -= 2);
+      if (horPos < 75)
+      {
+          hor = false;
+          // raz za cyklus zmeraj teplotu
+          temperature = measureTemperature();
+      }
+  }
+  else
+  {
+      horizontalS.write(horPos += 2);
+      if (horPos > 115)
+      {
+          hor = true;
+      }
+  }
+  /*
+  if (ver) // vertical lookAround for servo
+  {
+      verticalS.write(verPos -= 2);
+      if (verPos < 80)
+      {
+          ver = false;
+      }
+  }
+  else
+  {
+      verticalS.write(verPos += 2);
+      if (verPos > 110)
+      {
+          ver = true;
+      }
+  }*/
 }
-void hanleColision()
+void handleCollision()
 {
     if (distance < HITDISTANCE && movingForward == true && !followVall)
     {
@@ -201,9 +205,9 @@ void hanleColision()
         int distanceRightAkt;
 
         stopMove();
-        distanceLeftAkt = calculateDistanceLeft();
+        distanceLeftAkt = getDistLeft();
         delay(300);
-        distanceRightAkt = calculateDistanceRight();
+        distanceRightAkt = getDistRight();
         if(distanceLeftAkt > distanceRightAkt)
         { 
           turnLeftParam(400);
@@ -233,7 +237,7 @@ void handleBluetooth()
             case '3': { corectLeft(); break; }
             case '4': { corectRight(); break; }
             case '5': { followVall = true; break; }
-            case '6': { enable = false; break; }
+            case '6': { enableLookAround = false; break; }
             case 'A': { turnLeft(); break; }
             case 'D': { turnRight(); break; }
             case 'Q': { stopMove(); break; }
@@ -340,7 +344,7 @@ void corectRight()
 }
 void moveForward()
 {
-    enable = true;
+    enableLookAround = true;
     movingForward = true;
     analogWrite(E1, moveSpeed);
     analogWrite(E2, moveSpeed);
