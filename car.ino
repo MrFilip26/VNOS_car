@@ -39,44 +39,14 @@ long duration;
 long durationLeft;
 long durationRight;
 char cNEW;
-int corectRightVal = 30;
-int corectLeftVal = 0;
+int correctRightVal = 30;
+int correctLeftVal = 0;
 bool followVall = false;
 unsigned long time;
 bool enableLookAround = false;
 
-int corect = 0;
-// fuctions for threads for distance calculation
-int getDist()
-{
-    digitalWrite(11, LOW);
-    delayMicroseconds(2);
-    digitalWrite(11, HIGH);
-    delayMicroseconds(10);
-    digitalWrite(11, LOW);
-    duration = pulseIn(8, HIGH);
-    return duration * 0.017;
-}
-int getDistLeft()
-{
-    digitalWrite(6, LOW);
-    delayMicroseconds(2);
-    digitalWrite(6, HIGH);
-    delayMicroseconds(10);
-    digitalWrite(6, LOW);
-    duration = pulseIn(7, HIGH);
-    return duration * 0.017;
-}
-int getDistRight()
-{
-    digitalWrite(5, LOW);
-    delayMicroseconds(2);
-    digitalWrite(5, HIGH);
-    delayMicroseconds(10);
-    digitalWrite(5, LOW);
-    duration = pulseIn(4, HIGH);
-    return duration * 0.017;
-}
+int correct = 0;
+
 // create multi-threaded triggers with constrained execution frequency
 TimedAction frontDistanceThread = TimedAction(50, getDist);
 TimedAction leftDistanceThread = TimedAction(200, getDistLeft);
@@ -126,7 +96,7 @@ void loop()
 
     // steering correction - right
     analogWrite(E2, 0); // turn off right motor
-    delay(corectRightVal); // wait N [ms]
+    delay(correctRightVal); // wait N [ms]
     analogWrite(E2, moveSpeed); // turn on right motor
     
     if(movingForward)
@@ -139,9 +109,10 @@ void loop()
         analogWrite(E2, moveSpeed);
     }
     // TODO - turn on/off by bool switch
-    //fallowWallFunc();
+    //followWallFunc();
     //printDistances();
 }
+
 void printDistances()
 {
     if (distance != 0)
@@ -197,6 +168,7 @@ void lookAround()
       }
   }*/
 }
+
 void handleCollision()
 {
     if (distance < HITDISTANCE && movingForward == true && !followVall)
@@ -234,8 +206,8 @@ void handleBluetooth()
             case 'S': { moveBack(); break; }
             case '1': { speedUP(); break; }
             case '2': { speedDOWN(); break; }
-            case '3': { corectLeft(); break; }
-            case '4': { corectRight(); break; }
+            case '3': { correctLeft(); break; }
+            case '4': { correctRight(); break; }
             case '5': { followVall = true; break; }
             case '6': { enableLookAround = false; break; }
             case 'A': { turnLeft(); break; }
@@ -246,40 +218,40 @@ void handleBluetooth()
         }
     }
 }
-void fallowWallFunc()
+void followWallFunc()
 {
     if (movingForward && followVall)
     {
         horizontalS.write(180);
         if (distance > 50)
         {
-            corect = 1;
-            corectRightVal = 250;
+            correct = 1;
+            correctRightVal = 250;
         }
         else if (distance < 30)
         {
             time = millis();
-            corect = -1;
-            corectRightVal = -125;
+            correct = -1;
+            correctRightVal = -125;
         }
         else
         {
             time = millis();
-            corect == 0;
-            corectRightVal = 0;
+            correct == 0;
+            correctRightVal = 0;
         }
 
-        if (corect == 1)
+        if (correct == 1)
         {
             analogWrite(E2, 0);
-            delay(corectRightVal);
+            delay(correctRightVal);
             analogWrite(E2, moveSpeed);
         }
-        else if (corect == -1)
+        else if (correct == -1)
         {
-            corectLeftVal = -corectRightVal;
+            correctLeftVal = -correctRightVal;
             analogWrite(E1, 0);
-            delay(corectLeftVal);
+            delay(correctLeftVal);
             analogWrite(E1, moveSpeed);
         }
         else
@@ -291,7 +263,7 @@ void fallowWallFunc()
         {
             followVall = false;
         }
-        Serial.println(corectRightVal);
+        Serial.println(correctRightVal);
 
         // spomalenie 
         analogWrite(E1, 0);
@@ -301,125 +273,4 @@ void fallowWallFunc()
         analogWrite(E2, moveSpeed);
     }
 }
-//delay 350ms = 90 stupnov
-// 200 - 45
-// 100 - 15
-void turnLeftParam(int degree)
-{
-    //movingForward
-    analogWrite(E1, 150);
-    analogWrite(E2, 150);
 
-    digitalWrite(I1, LOW);
-    digitalWrite(I2, HIGH);
-    digitalWrite(I3, LOW);
-    digitalWrite(I4, HIGH);
-
-    delay(degree);
-    analogWrite(E1, 0);
-    analogWrite(E2, 0);
-}
-void turnRightParam(int degree)
-{
-    movingForward = false;
-    analogWrite(E1, 150);
-    analogWrite(E2, 150);
-
-    digitalWrite(I1, HIGH);
-    digitalWrite(I2, LOW);
-    digitalWrite(I3, HIGH);
-    digitalWrite(I4, LOW);
-
-    delay(degree);
-    analogWrite(E1, 0);
-    analogWrite(E2, 0);
-}
-void corectLeft()
-{
-    corectRightVal += 2;
-}
-void corectRight()
-{
-    corectRightVal -= 2;
-}
-void moveForward()
-{
-    enableLookAround = true;
-    movingForward = true;
-    analogWrite(E1, moveSpeed);
-    analogWrite(E2, moveSpeed);
-    digitalWrite(I1, HIGH);
-    digitalWrite(I2, LOW);
-    digitalWrite(I3, LOW);
-    digitalWrite(I4, HIGH);
-}
-void moveBack()
-{
-    movingForward = false;
-    analogWrite(E1, moveSpeed);
-    analogWrite(E2, moveSpeed);
-    digitalWrite(I1, LOW);
-    digitalWrite(I2, HIGH);
-    digitalWrite(I3, HIGH);
-    digitalWrite(I4, LOW);
-}
-void turnLeft()
-{
-    movingForward = false;
-    analogWrite(E1, 150);
-    analogWrite(E2, 150);
-
-    digitalWrite(I1, LOW);
-    digitalWrite(I2, HIGH);
-    digitalWrite(I3, LOW);
-    digitalWrite(I4, HIGH);
-}
-void turnRight()
-{
-    movingForward = false;
-    analogWrite(E1, 150);
-    analogWrite(E2, 150);
-
-    digitalWrite(I1, HIGH);
-    digitalWrite(I2, LOW);
-    digitalWrite(I3, HIGH);
-    digitalWrite(I4, LOW);
-}
-void speedUP()
-{
-    if (moveSpeed < 225)
-    {
-        moveSpeed += 30;
-    }
-    analogWrite(E1, moveSpeed);
-    analogWrite(E2, moveSpeed);
-}
-void speedDOWN()
-{
-    if (moveSpeed < 120)
-    {
-        moveSpeed = 0;
-        movingForward = false;
-    }
-    else
-    {
-        moveSpeed -= 30;
-    }
-    analogWrite(E1, moveSpeed);
-    analogWrite(E2, moveSpeed);
-}
-void stopMove()
-{
-    movingForward = false;
-    followVall = false;
-    analogWrite(E1, 200);
-    analogWrite(E2, 200);
-    digitalWrite(I1, LOW);
-    digitalWrite(I2, HIGH);
-    digitalWrite(I3, HIGH);
-    digitalWrite(I4, LOW);
-
-    delay(350);
-    analogWrite(E1, LOW);
-    analogWrite(E2, LOW);
-}
