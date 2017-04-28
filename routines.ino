@@ -1,36 +1,5 @@
 // fuctions for threads for distance calculation
-int getDist()
-{
-    digitalWrite(11, LOW);
-    delayMicroseconds(2);
-    digitalWrite(11, HIGH);
-    delayMicroseconds(10);
-    digitalWrite(11, LOW);
-    duration = pulseIn(8, HIGH);
-    return duration * 0.017;
-}
 
-int getDistLeft()
-{
-    digitalWrite(6, LOW);
-    delayMicroseconds(2);
-    digitalWrite(6, HIGH);
-    delayMicroseconds(10);
-    digitalWrite(6, LOW);
-    duration = pulseIn(7, HIGH);
-    return duration * 0.017;
-}
-
-int getDistRight()
-{
-    digitalWrite(5, LOW);
-    delayMicroseconds(2);
-    digitalWrite(5, HIGH);
-    delayMicroseconds(10);
-    digitalWrite(5, LOW);
-    duration = pulseIn(4, HIGH);
-    return duration * 0.017;
-}
 
 void correctLeft()
 {

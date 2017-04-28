@@ -1,5 +1,7 @@
 #include <TimedAction.h>
 #include <Utility.h>
+#include <LiquidCrystal.h>
+LiquidCrystal lcd(32, 30, 28, 26, 24, 22); // Creates an LCD object. Parameters: (rs, enable, d4, d5, d6, d7)
 
 #include "Servo.h"
 #include "Func.h"
@@ -46,7 +48,38 @@ unsigned long time;
 bool enableLookAround = false;
 
 int correct = 0;
+int getDist()
+{
+    digitalWrite(11, LOW);
+    delayMicroseconds(2);
+    digitalWrite(11, HIGH);
+    delayMicroseconds(10);
+    digitalWrite(11, LOW);
+    duration = pulseIn(8, HIGH);
+    return duration * 0.017;
+}
 
+int getDistLeft()
+{
+    digitalWrite(6, LOW);
+    delayMicroseconds(2);
+    digitalWrite(6, HIGH);
+    delayMicroseconds(10);
+    digitalWrite(6, LOW);
+    duration = pulseIn(7, HIGH);
+    return duration * 0.017;
+}
+
+int getDistRight()
+{
+    digitalWrite(5, LOW);
+    delayMicroseconds(2);
+    digitalWrite(5, HIGH);
+    delayMicroseconds(10);
+    digitalWrite(5, LOW);
+    duration = pulseIn(4, HIGH);
+    return duration * 0.017;
+}
 // create multi-threaded triggers with constrained execution frequency
 TimedAction frontDistanceThread = TimedAction(50, getDist);
 TimedAction leftDistanceThread = TimedAction(200, getDistLeft);
@@ -54,6 +87,7 @@ TimedAction rightDistanceThread = TimedAction(200, getDistRight);
 
 void setup()
 {
+  lcd.begin(16,2); // Initializes the interface to the LCD screen, and specifies the dimensions (width and height) of the display
     Serial.begin(9600); // init serial port
     // set modes to pins for speed of left & right motors
     pinMode(E1, OUTPUT);
@@ -71,6 +105,8 @@ void setup()
     pinMode(I3, OUTPUT);
     pinMode(I4, OUTPUT);
 
+    pinMode(3, OUTPUT);
+
     // sonar: trigger sends, echo receives
     pinMode(trigPin, OUTPUT);
     pinMode(echoPin, INPUT);
@@ -79,7 +115,16 @@ void setup()
     pinMode(trigPinRight, OUTPUT);
     pinMode(echoPinRight, INPUT);
 }
-
+void turnParralyzerON()
+{
+  Serial.println("high");
+    digitalWrite(3, HIGH);   
+}
+void turnParralyzerOFF()
+{
+  Serial.println("low");
+    digitalWrite(3, LOW);   
+}
 void loop()
 {
     int aktDistance = frontDistanceThread.check();
@@ -94,13 +139,23 @@ void loop()
 
     handleCollision();
 
-    // steering correction - right
-    analogWrite(E2, 0); // turn off right motor
-    delay(correctRightVal); // wait N [ms]
-    analogWrite(E2, moveSpeed); // turn on right motor
+    // raz za cyklus zmeraj teplotu
+    temperature = measureTemperature();
+    lcd.setCursor(0,0); // Sets the location at which subsequent text written to the LCD will be displayed
+    lcd.print("Distance: "); // Prints string "Distance" on the LCD
+    lcd.print(distance);
+    lcd.print(" cm      ");
+    lcd.setCursor(0,1);
+    lcd.print("Teplota: "); // Prints string "Distance" on the LCD
+    lcd.print(temperature);
     
     if(movingForward)
     {
+        // steering correction - right
+        analogWrite(E2, 0); // turn off right motor
+        delay(correctRightVal); // wait N [ms]
+        analogWrite(E2, moveSpeed); // turn on right motor
+        
       // forward drive slowdown
         analogWrite(E1, 0);
         analogWrite(E2, 0);
@@ -138,8 +193,6 @@ void lookAround()
       if (horPos < 75)
       {
           hor = false;
-          // raz za cyklus zmeraj teplotu
-          temperature = measureTemperature();
       }
   }
   else
@@ -215,6 +268,8 @@ void handleBluetooth()
             case 'Q': { stopMove(); break; }
             case 'N': { turnLeftParam(350); break; }
             case 'M': { turnRightParam(450); break; }
+            case 'O': { turnParralyzerON(); break; }
+            case 'F': { turnParralyzerOFF(); break; }
         }
     }
 }
