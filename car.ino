@@ -25,6 +25,13 @@ LiquidCrystal lcd(32, 30, 28, 26, 24, 22); // Creates an LCD object. Parameters:
 
 #define HITDISTANCE 50 // stop [cm]
 
+const int ENA = 12;
+const int ENB = 13;
+const int IN1 = A5; 
+const int IN2 = A4;
+const int IN3 = A1;
+const int IN4 = A0;
+
 Servo horizontalS, verticalS;
 
 bool movingForward = false;
@@ -46,6 +53,9 @@ int correctLeftVal = 0;
 bool followVall = false;
 unsigned long time;
 bool enableLookAround = false;
+int speedLeft = 130;
+int speedRight = 100;
+bool paralyzerState = false;
 
 int correct = 0;
 int getDist()
@@ -115,18 +125,11 @@ void setup()
     pinMode(trigPinRight, OUTPUT);
     pinMode(echoPinRight, INPUT);
 }
-void turnParralyzerON()
-{
-  Serial.println("high");
-    digitalWrite(3, HIGH);   
-}
-void turnParralyzerOFF()
-{
-  Serial.println("low");
-    digitalWrite(3, LOW);   
-}
+
 void loop()
 {
+  handleBluetooth(); // process bluetooth input signal
+  /*
     int aktDistance = frontDistanceThread.check();
     if(aktDistance != 0)
       distance = aktDistance;
@@ -166,6 +169,15 @@ void loop()
     // TODO - turn on/off by bool switch
     //followWallFunc();
     //printDistances();
+    */
+    lcd.setCursor(0,0); // Sets the location at which subsequent text written to the LCD will be displayed
+    lcd.print("SpeedLeft: "); // Prints string "Distance" on the LCD
+    lcd.print(speedLeft);
+    lcd.print("     ");
+    lcd.setCursor(0,1);
+    lcd.print("SpeedRight: "); // Prints string "Distance" on the LCD
+    lcd.print(speedRight);
+    lcd.print("     ");
 }
 
 void printDistances()
@@ -241,36 +253,48 @@ void handleCollision()
         }
         else
         {
-          turnRightParam(450);
+          turnRightParam(400);
           delay(100);
           moveForward();
         }
     }
 }
+
 void handleBluetooth()
 {
     cNEW = 0;
     if (Serial.available() > 0)
     {
+      time = millis();
         cNEW = Serial.read();
         switch (cNEW)
         {
             case 'W': { moveForward(); time = millis(); break; }
             case 'S': { moveBack(); break; }
+            case 'A': { turnLeft(); break; }
+            case 'D': { turnRight(); break; }
+            case 'Q': { stopMove(); break; }
+
+            case 'O': { handleParalyzer(); break; }
+            case 'X': { enableLookAround = false; break; }
+            
             case '1': { speedUP(); break; }
             case '2': { speedDOWN(); break; }
             case '3': { correctLeft(); break; }
             case '4': { correctRight(); break; }
-            case '5': { followVall = true; break; }
-            case '6': { enableLookAround = false; break; }
-            case 'A': { turnLeft(); break; }
-            case 'D': { turnRight(); break; }
-            case 'Q': { stopMove(); break; }
-            case 'N': { turnLeftParam(350); break; }
-            case 'M': { turnRightParam(450); break; }
-            case 'O': { turnParralyzerON(); break; }
-            case 'F': { turnParralyzerOFF(); break; }
+            default : { brake(); break; }
+            
+            //case '5': { followVall = true; break; }
+            //case 'N': { turnLeftParam(550); break; }
+            //case 'M': { turnRightParam(550); break; }
         }
+    }
+    else
+    {
+      if(millis() - time > 500)
+      {
+        brake();    
+      }
     }
 }
 void followWallFunc()
