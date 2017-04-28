@@ -58,43 +58,12 @@ int speedRight = 100;
 bool paralyzerState = false;
 
 int correct = 0;
-int getDist()
-{
-    digitalWrite(11, LOW);
-    delayMicroseconds(2);
-    digitalWrite(11, HIGH);
-    delayMicroseconds(10);
-    digitalWrite(11, LOW);
-    duration = pulseIn(8, HIGH);
-    return duration * 0.017;
-}
-
-int getDistLeft()
-{
-    digitalWrite(6, LOW);
-    delayMicroseconds(2);
-    digitalWrite(6, HIGH);
-    delayMicroseconds(10);
-    digitalWrite(6, LOW);
-    duration = pulseIn(7, HIGH);
-    return duration * 0.017;
-}
-
-int getDistRight()
-{
-    digitalWrite(5, LOW);
-    delayMicroseconds(2);
-    digitalWrite(5, HIGH);
-    delayMicroseconds(10);
-    digitalWrite(5, LOW);
-    duration = pulseIn(4, HIGH);
-    return duration * 0.017;
-}
+/*
 // create multi-threaded triggers with constrained execution frequency
 TimedAction frontDistanceThread = TimedAction(50, getDist);
 TimedAction leftDistanceThread = TimedAction(200, getDistLeft);
 TimedAction rightDistanceThread = TimedAction(200, getDistRight);
-
+*/
 void setup()
 {
   lcd.begin(16,2); // Initializes the interface to the LCD screen, and specifies the dimensions (width and height) of the display
@@ -129,7 +98,9 @@ void setup()
 void loop()
 {
   handleBluetooth(); // process bluetooth input signal
+  int aktDistance = getDist();
   /*
+   * 
     int aktDistance = frontDistanceThread.check();
     if(aktDistance != 0)
       distance = aktDistance;
@@ -170,6 +141,12 @@ void loop()
     //followWallFunc();
     //printDistances();
     */
+    
+    lcd.setCursor(0,0); // Sets the location at which subsequent text written to the LCD will be displayed
+    lcd.print("Distance: "); // Prints string "Distance" on the LCD
+    lcd.print(aktDistance);
+    lcd.print(" cm     ");
+    /*
     lcd.setCursor(0,0); // Sets the location at which subsequent text written to the LCD will be displayed
     lcd.print("SpeedLeft: "); // Prints string "Distance" on the LCD
     lcd.print(speedLeft);
@@ -178,25 +155,8 @@ void loop()
     lcd.print("SpeedRight: "); // Prints string "Distance" on the LCD
     lcd.print(speedRight);
     lcd.print("     ");
+    */
 }
-
-void printDistances()
-{
-    if (distance != 0)
-        Serial.println("Front" + distance);
-    if (distanceLeft != 0)
-        Serial.println("Left" + distanceLeft);
-    if (distanceRight != 0)
-        Serial.println("Right" + distanceRight);
-}
-
-float measureTemperature(){
-  int senzorVal = analogRead(tempPort); // read data from silicon sensor
-  float voltage = (senzorVal / 1024.0) * 5.0; // calculate voltage according to catalogue
-  
-  return (voltage - 0.5) * 100; // calculate temperature in [°C]
-}
-
 void lookAround()
 {
   if (hor) //horizontal lookAround for servo
@@ -285,8 +245,9 @@ void handleBluetooth()
             default : { brake(); break; }
             
             //case '5': { followVall = true; break; }
-            //case 'N': { turnLeftParam(550); break; }
-            //case 'M': { turnRightParam(550); break; }
+            //550
+            case 'N': { turnLeftParam(100); break; }
+            case 'M': { turnRightParam(200); break; }
         }
     }
     else
