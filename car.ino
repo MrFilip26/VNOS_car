@@ -112,7 +112,6 @@ void setup()
     pinMode(trigPinRight, OUTPUT);
     pinMode(echoPinRight, INPUT);
 }
-
 void loop()
 {
   handleBluetooth(); // process bluetooth input signal
@@ -130,7 +129,7 @@ void handleBluetooth()
     cNEW = 0;
     if (Serial.available() > 0)
     {
-      time = millis();
+      //time = millis();
         cNEW = Serial.read();
         switch (cNEW)
         {
@@ -138,7 +137,7 @@ void handleBluetooth()
             case 'S': { moveBack(); break; }
             case 'A': { turnLeft(); break; }
             case 'D': { turnRight(); break; }
-            case 'Q': { stopMove(); break; }
+            case 'Q': { brake(); break; }
 
             case 'O': { handleParalyzer(); break; }
             case 'X': { enableLookAround = false; break; }
@@ -155,13 +154,14 @@ void handleBluetooth()
             case 'M': { turnRightParam(200); break; }
         }
     }
+    /*
     else
     {
       if(millis() - time > 500)
       {
         brake();    
       }
-    }
+    }*/
 }
 void lookAround()
 {
@@ -206,7 +206,7 @@ void handleCollision()
         int distanceLeftAkt;
         int distanceRightAkt;
 
-        stopMove();
+        brake();
         distanceLeftAkt = getDistLeft();
         delay(300);
         distanceRightAkt = getDistRight();

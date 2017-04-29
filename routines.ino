@@ -2,10 +2,10 @@
 void brake()
 {
   Serial.println("brake");
-  digitalWrite(I1, HIGH);
-  digitalWrite(I2, HIGH);
-  digitalWrite(I3, HIGH);
-  digitalWrite(I4, HIGH); 
+    digitalWrite(I1, HIGH);
+    digitalWrite(I2, HIGH);
+    digitalWrite(I3, HIGH);
+    digitalWrite(I4, HIGH); 
 }
 //delay 550ms = 90 stupnov
 //otacanie na mieste .. parameter urci cas teda stupne
@@ -114,16 +114,6 @@ void speedUP()
     analogWrite(E1, speedLeft);
     analogWrite(E2, speedRight);
 }
-void setSpeedMove(int _speed)
-{
-    if (_speed < 225)
-    {
-      speedRight = _speed;
-      speedLeft = _speed + 30;
-    }
-    analogWrite(E1, speedLeft);
-    analogWrite(E2, speedRight);
-}
 void speedDOWN()
 {
     if (speedLeft > 100 && speedRight > 100)
@@ -139,20 +129,15 @@ void speedDOWN()
     analogWrite(E1, speedLeft);
     analogWrite(E2, speedRight);
 }
-void stopMove()
+void setSpeedMove(int _speed)
 {
-    movingForward = false;
-    followVall = false;
-    analogWrite(E1, HIGH);
-    analogWrite(E2, HIGH);
-    digitalWrite(I1, LOW);
-    digitalWrite(I2, HIGH);
-    digitalWrite(I3, HIGH);
-    digitalWrite(I4, LOW);
-
-    delay(300);
-    analogWrite(E1, LOW);
-    analogWrite(E2, LOW);
+    if (_speed < 225)
+    {
+      speedRight = _speed;
+      speedLeft = _speed + 30;
+    }
+    analogWrite(E1, speedLeft);
+    analogWrite(E2, speedRight);
 }
 void handleParalyzer()
 {
