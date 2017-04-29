@@ -2,10 +2,10 @@
 void brake()
 {
   Serial.println("brake");
-  digitalWrite(IN1, HIGH);
-  digitalWrite(IN2, HIGH);
-  digitalWrite(IN3, HIGH);
-  digitalWrite(IN4, HIGH); 
+  digitalWrite(I1, HIGH);
+  digitalWrite(I2, HIGH);
+  digitalWrite(I3, HIGH);
+  digitalWrite(I4, HIGH); 
 }
 //delay 550ms = 90 stupnov
 //otacanie na mieste .. parameter urci cas teda stupne
@@ -114,6 +114,16 @@ void speedUP()
     analogWrite(E1, speedLeft);
     analogWrite(E2, speedRight);
 }
+void setSpeedMove(int _speed)
+{
+    if (_speed < 225)
+    {
+      speedRight = _speed;
+      speedLeft = _speed + 30;
+    }
+    analogWrite(E1, speedLeft);
+    analogWrite(E2, speedRight);
+}
 void speedDOWN()
 {
     if (speedLeft > 100 && speedRight > 100)
@@ -144,36 +154,6 @@ void stopMove()
     analogWrite(E1, LOW);
     analogWrite(E2, LOW);
 }
-int getDist()
-{
-    digitalWrite(11, LOW);
-    delayMicroseconds(2);
-    digitalWrite(11, HIGH);
-    delayMicroseconds(10);
-    digitalWrite(11, LOW);
-    duration = pulseIn(8, HIGH);
-    return duration * 0.017;
-}
-int getDistLeft()
-{
-    digitalWrite(6, LOW);
-    delayMicroseconds(2);
-    digitalWrite(6, HIGH);
-    delayMicroseconds(10);
-    digitalWrite(6, LOW);
-    duration = pulseIn(7, HIGH);
-    return duration * 0.017;
-}
-int getDistRight()
-{
-    digitalWrite(5, LOW);
-    delayMicroseconds(2);
-    digitalWrite(5, HIGH);
-    delayMicroseconds(10);
-    digitalWrite(5, LOW);
-    duration = pulseIn(4, HIGH);
-    return duration * 0.017;
-}
 void handleParalyzer()
 {
   if(paralyzerState)
@@ -189,16 +169,20 @@ void handleParalyzer()
     digitalWrite(3, HIGH); 
   }
 }
-void printDistances()
+void checkDistance()
 {
-    if (distance != 0)
-        Serial.println("Front" + distance);
-    if (distanceLeft != 0)
-        Serial.println("Left" + distanceLeft);
-    if (distanceRight != 0)
-        Serial.println("Right" + distanceRight);
-}
+  int aktDistance = frontDistanceThread.check();
+    if(aktDistance != 0)
+      distance = aktDistance;
+    int aktDistanceL = leftDistanceThread.check();
+    if(aktDistanceL != 0)
+      distanceLeft = aktDistanceL;
+    int aktDistanceR = rightDistanceThread.check();
+    if(aktDistanceR != 0)
+      distanceRight = aktDistanceR;
 
+    temperature = measureTemperature();
+}
 float measureTemperature(){
   int senzorVal = analogRead(tempPort); // read data from silicon sensor
   float voltage = (senzorVal / 1024.0) * 5.0; // calculate voltage according to catalogue
