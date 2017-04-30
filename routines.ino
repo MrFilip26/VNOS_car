@@ -1,7 +1,7 @@
 void init_servos()
 {
-	horizontalS.write(90); // middle of range
-	verticalS.write(100); // middle of range
+	horizontalS.write(horPos); // middle of range
+	verticalS.write(verPos); // middle of range
 }
 
 // fuctions for threads for distance calculation
@@ -210,5 +210,25 @@ void turn(enum_side direction, int angle)
 		turnLeftParam(angle);
 	else
 		turnRightParam(angle);
+}
+
+void steer(enum_side direction, int angle)
+{
+	if (direction == LEFT)
+	{
+		speedRight += 50;
+		analogWrite(E1, speedLeft);
+		analogWrite(E2, speedRight);
+		delay(angle*100);
+		speedRight -= 50;
+	}
+	else
+	{
+		speedLeft += 50;
+		analogWrite(E1, speedLeft);
+		analogWrite(E2, speedRight);
+		delay(angle*100);
+		speedLeft -= 50;
+	}
 }
 

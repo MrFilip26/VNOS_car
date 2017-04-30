@@ -26,13 +26,13 @@ Servo horizontalS, verticalS;
 #define I1 A5   // Control pin 1 for motor 1
 
 #define HITDISTANCE 50 // stop [cm]
-#define TIME_CHECK_DIST 400 // interval [ms]
+#define TIME_CHECK_DIST 100 // interval [ms]
 
 bool movingForward = false;
 bool ver = false;
 bool hor = false;
 int verPos = 90;
-int horPos = 90;
+int horPos = 100;
 int distanceFront;
 int distanceLeft;
 int distanceRight;
@@ -47,7 +47,7 @@ int speedLeft = 200;
 int speedRight = 100;
 bool paralyzerState = false;
 bool autoExploModeOn = false;
-bool debugModeOn = false;
+bool debugModeOn = true;
 
 int getDist()
 {
@@ -225,10 +225,10 @@ void printDistance()
 {
 	// Sets the location at which subsequent text written to the LCD will be displayed
 	lcd.setCursor(0,0);
-	lcd.print("L"); // Prints string "Distance" on the LCD
-	if(distanceLeft < 999)
+	lcd.print("R"); // Prints string "Distance" on the LCD
+	if(distanceRight < 999)
 	{
-		lcd.print(distanceLeft);
+		lcd.print(distanceRight);
 		lcd.print("   ");
 	}
 	else
@@ -247,10 +247,10 @@ void printDistance()
 		lcd.print("INF   ");  
 	}
 	lcd.setCursor(12,0);
-	lcd.print("R");
-	if(distanceRight < 999)
+	lcd.print("L");
+	if(distanceLeft < 999)
 	{
-		lcd.print(distanceRight);
+		lcd.print(distanceLeft);
 		lcd.print("    ");
 	}
 	else
