@@ -48,6 +48,7 @@ int speedRight = 100;
 bool paralyzerState = false;
 bool autoExploModeOn = false;
 bool debugModeOn = true;
+enum_direction eDir = DSTOP;
 
 int getDist()
 {
@@ -126,7 +127,7 @@ void loop()
 	checkDistance();
 	printOnDisplayThread.check();
 
-	if (distanceFront < HITDISTANCE)
+	if (distanceFront < HITDISTANCE && eDir == DFRONT)
     brake();
 
 	if (autoExploModeOn)

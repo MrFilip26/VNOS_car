@@ -7,6 +7,7 @@ void init_servos()
 // fuctions for threads for distance calculation
 void brake()
 {
+  eDir = DSTOP;
 	Serial.println("brake");
 	digitalWrite(I1, HIGH);
 	digitalWrite(I2, HIGH);
@@ -56,6 +57,7 @@ void turnRightParam(int degree)
 
 void moveForward()
 {
+  eDir = DFRONT;
 	Serial.println("Move forward");
 	enableLookAround = true;
 	movingForward = true;
@@ -71,6 +73,7 @@ void moveForward()
 
 void moveBack()
 {
+  eDir = DBACK;
 	Serial.println("Move Back");
 	speedLeft = 120;
 	speedRight = 150;
@@ -85,6 +88,7 @@ void moveBack()
 
 void turnLeft()
 {
+  eDir = DLEFT;
 	Serial.println("Spin Left");
 	movingForward = false;
 	analogWrite(E1, speedLeft);
@@ -98,6 +102,7 @@ void turnLeft()
 
 void turnRight()
 {
+  eDir = DRIGHT;
 	Serial.println("Spin Right");
 	movingForward = false;
 	analogWrite(E1, speedLeft);

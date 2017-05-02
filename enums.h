@@ -8,3 +8,11 @@ enum enum_side {
 	RIGHT
 };
 
+enum enum_direction {
+  DLEFT,
+  DRIGHT,
+  DFRONT,
+  DBACK,
+  DSTOP
+};
+
