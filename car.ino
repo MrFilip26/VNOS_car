@@ -125,12 +125,9 @@ void loop()
 	handleBluetooth(); // process bluetooth input signal
 	checkDistance();
 	printOnDisplayThread.check();
-	/*
-	   if (enableLookAround)
-	   lookAround();
 
-	   handleCollision();
-	 */
+	if (distanceFront < HITDISTANCE)
+    brake();
 
 	if (autoExploModeOn)
 		step_ae();
@@ -191,32 +188,6 @@ void lookAround()
 		if (horPos > 115)
 		{
 			hor = true;
-		}
-	}
-}
-
-void handleCollision()
-{
-	if (distanceFront < HITDISTANCE && movingForward == true && !followVall)
-	{
-		int distanceLeftAkt;
-		int distanceRightAkt;
-
-		brake();
-		distanceLeftAkt = getDistLeft();
-		delay(300);
-		distanceRightAkt = getDistRight();
-		if(distanceLeftAkt > distanceRightAkt)
-		{ 
-			turnLeftParam(400);
-			delay(100);
-			moveForward();
-		}
-		else
-		{
-			turnRightParam(400);
-			delay(100);
-			moveForward();
 		}
 	}
 }
